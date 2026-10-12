@@ -32,8 +32,25 @@ public class UsersController : Controller
     }
 
     [HttpPost]
-    public IActionResult CreateUser([FromBody] object user)
+    [Produces("application/json", "application/xml")]
+    public IActionResult CreateUser([FromBody] CreateUserDto user)
     {
-        throw new NotImplementedException();
+        if (user is null)
+            return BadRequest();
+
+        if (user.Login != null && user.Login.Any(c => !char.IsLetterOrDigit(c)))
+            ModelState.AddModelError("Login", "Login should contain only letters or digits");
+
+        if (!ModelState.IsValid)
+            return UnprocessableEntity(ModelState);
+
+        var entity = _mapper.Map<UserEntity>(user);
+        var createdUser = _userRepository.Insert(entity);
+
+        return CreatedAtRoute(
+            nameof(GetUserById),
+            new { userId = createdUser.Id },
+            createdUser.Id
+        );
     }
 }

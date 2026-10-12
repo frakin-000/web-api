@@ -123,4 +123,21 @@ public class UsersController : Controller
         _userRepository.Delete(id);
         return NoContent();
     }
+
+    [HttpHead("{userId}")]
+    [Produces("application/json", "application/xml")]
+    public IActionResult HeadUserById([FromRoute] string userId)
+    {
+        if (!Guid.TryParse(userId, out var id))
+            return NotFound();
+
+        var user = _userRepository.FindById(id);
+
+        if (user is null)
+            return NotFound();
+
+        Response.ContentType = "application/json; charset=utf-8";
+
+        return Ok();
+}
 }

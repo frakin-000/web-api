@@ -43,6 +43,7 @@ builder.Services.AddAutoMapper(cfg =>
             opt => opt.MapFrom(src => $"{src.LastName} {src.FirstName}")
         );
     cfg.CreateMap<CreateUserDto, UserEntity>();
+    cfg.CreateMap<UpdateUserDto, UserEntity>();
 }, Array.Empty<System.Reflection.Assembly>());
 
 builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();

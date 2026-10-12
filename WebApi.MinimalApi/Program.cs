@@ -44,6 +44,7 @@ builder.Services.AddAutoMapper(cfg =>
         );
     cfg.CreateMap<CreateUserDto, UserEntity>();
     cfg.CreateMap<UpdateUserDto, UserEntity>();
+    cfg.CreateMap<UserEntity, UpdateUserDto>();
 }, Array.Empty<System.Reflection.Assembly>());
 
 builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();

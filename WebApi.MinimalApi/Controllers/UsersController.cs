@@ -192,4 +192,11 @@ public class UsersController : Controller
 
         return Ok(users);
     }
+
+    [HttpOptions]
+    public IActionResult GetUsersOptions()
+    {
+        Response.Headers.Append("Allow", "GET, POST, OPTIONS");
+        return Ok();
+    }
 }

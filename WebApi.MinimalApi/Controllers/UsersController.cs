@@ -3,6 +3,7 @@ using WebApi.MinimalApi.Domain;
 using WebApi.MinimalApi.Models;
 using AutoMapper;
 using Microsoft.AspNetCore.JsonPatch;
+using Newtonsoft.Json;
 
 namespace WebApi.MinimalApi.Controllers;
 
@@ -14,11 +15,13 @@ public class UsersController : Controller
 
     private readonly IUserRepository _userRepository;
     private readonly IMapper _mapper;
+    private readonly LinkGenerator _linkGenerator;
 
-    public UsersController(IUserRepository userRepository, IMapper mapper)
+    public UsersController(IUserRepository userRepository, IMapper mapper, LinkGenerator linkGenerator)
     {
         _userRepository = userRepository;
         _mapper = mapper;
+        _linkGenerator = linkGenerator;
     }
 
     [HttpGet("{userId}", Name = nameof(GetUserById))]
@@ -116,8 +119,8 @@ public class UsersController : Controller
         if (!Guid.TryParse(userId, out var id))
             return NotFound();
 
-        var user =_userRepository.FindById(id);
-        if(user is null)
+        var user = _userRepository.FindById(id);
+        if (user is null)
             return NotFound();
 
         _userRepository.Delete(id);
@@ -132,12 +135,61 @@ public class UsersController : Controller
             return NotFound();
 
         var user = _userRepository.FindById(id);
-
         if (user is null)
             return NotFound();
 
         Response.ContentType = "application/json; charset=utf-8";
-
         return Ok();
-}
+    }
+
+
+    [HttpGet(Name = nameof(GetUsers))]
+    [Produces("application/json", "application/xml")]
+    public IActionResult GetUsers([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+    {
+        pageNumber = Math.Max(pageNumber, 1);
+        pageSize = Math.Clamp(pageSize, 1, 20);
+        var pageList = _userRepository.GetPage(pageNumber, pageSize);
+        var users = _mapper.Map<IEnumerable<UserDto>>(pageList);
+        string? previousPageLink = null;
+        string? nextPageLink = null;
+
+        if (pageList.HasPrevious)
+        {
+            previousPageLink =
+                _linkGenerator.GetUriByRouteValues(HttpContext,
+                    nameof(GetUsers),
+                    new
+                    {
+                        pageNumber = pageList.CurrentPage - 1,
+                        pageSize = pageList.PageSize
+                    });
+        }
+
+        if (pageList.HasNext)
+        {
+            nextPageLink =
+                _linkGenerator.GetUriByRouteValues(HttpContext,
+                    nameof(GetUsers),
+                    new
+                    {
+                        pageNumber = pageList.CurrentPage + 1,
+                        pageSize = pageList.PageSize
+                    });
+        }
+
+        var paginationHeader = new
+        {
+            previousPageLink,
+            nextPageLink,
+            totalCount = pageList.TotalCount,
+            pageSize = pageList.PageSize,
+            currentPage = pageList.CurrentPage,
+            totalPages = pageList.TotalPages
+        };
+
+        Response.Headers["X-Pagination"] = JsonConvert.SerializeObject(paginationHeader);
+
+        return Ok(users);
+    }
 }

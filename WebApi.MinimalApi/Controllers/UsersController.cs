@@ -50,11 +50,12 @@ public class UsersController : Controller
 
         var entity = _mapper.Map<UserEntity>(user);
         var createdUser = _userRepository.Insert(entity);
+        var createdUserDto = _mapper.Map<UserDto>(createdUser);
 
         return CreatedAtRoute(
             nameof(GetUserById),
             new { userId = createdUser.Id },
-            createdUser.Id
+            createdUserDto
         );
     }
 
